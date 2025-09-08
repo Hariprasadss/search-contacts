@@ -1,4 +1,4 @@
-// BetterContact Lead Finder App
+// H Lead Finder App
 class LeadFinderApp {
     constructor() {
     this.apiKey = '71c6de3c7e8ec1f97848'; // Set real API key here
@@ -13,6 +13,7 @@ class LeadFinderApp {
         this.bindEvents();
         this.loadTheme();
         this.showEmptyState();
+        this.addCompanyRow(); // Add initial company row
         this.updateRemoveButtons();
     }
 
@@ -52,6 +53,29 @@ class LeadFinderApp {
             addCompanyBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 this.addCompanyRow();
+            });
+        }
+
+        const importCompaniesBtn = document.getElementById('importCompaniesBtn');
+        if (importCompaniesBtn) {
+            importCompaniesBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.triggerFileImport();
+            });
+        }
+
+        const downloadSampleBtn = document.getElementById('downloadSampleBtn');
+        if (downloadSampleBtn) {
+            downloadSampleBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.downloadSampleCSV();
+            });
+        }
+
+        const companiesFileInput = document.getElementById('companiesFileInput');
+        if (companiesFileInput) {
+            companiesFileInput.addEventListener('change', (e) => {
+                this.handleFileImport(e);
             });
         }
 
@@ -143,25 +167,6 @@ class LeadFinderApp {
         }
     }
 
-    addCompanyRow() {
-        const companiesList = document.getElementById('companiesList');
-        const newRow = document.createElement('div');
-        newRow.className = 'company-row';
-        newRow.innerHTML = `
-            <div class="form-group">
-                <input type="text" name="bulkCompanyDomain" class="form-control" placeholder="Company Domain (e.g., techcorp.com)">
-            </div>
-            <div class="form-group">
-                <input type="text" name="bulkCompanyName" class="form-control" placeholder="Company Name (e.g., Tech Corp)">
-            </div>
-            <button type="button" class="btn btn--outline remove-company-btn">
-                <i class="fas fa-trash"></i>
-            </button>
-        `;
-        companiesList.appendChild(newRow);
-        this.updateRemoveButtons();
-    }
-
     removeCompanyRow(button) {
         const row = button.closest('.company-row');
         if (row) {
@@ -179,6 +184,112 @@ class LeadFinderApp {
         });
     }
 
+    triggerFileImport() {
+        const fileInput = document.getElementById('companiesFileInput');
+        if (fileInput) {
+            fileInput.click();
+        }
+    }
+
+    handleFileImport(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target.result;
+            this.parseAndImportCompanies(text);
+        };
+        reader.readAsText(file);
+    }
+
+    downloadSampleCSV() {
+        const sampleData = `company_domain,company_name
+amazon.com,Amazon Inc
+google.com,Google LLC
+microsoft.com,Microsoft Corporation
+apple.com,Apple Inc
+tesla.com,Tesla Inc`;
+        
+        this.downloadFile(sampleData, 'sample_companies.csv', 'text/csv');
+        this.showToast('success', 'Download Complete', 'Sample CSV file downloaded');
+    }
+
+    parseAndImportCompanies(csvText) {
+        try {
+            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line);
+            const importStatus = document.getElementById('importStatus');
+            
+            let importedCount = 0;
+            const companies = [];
+            
+            lines.forEach(line => {
+                // Handle CSV format: "domain,name" or just "domain"
+                const parts = line.split(',').map(part => part.trim().replace(/"/g, ''));
+                const domain = parts[0];
+                const name = parts[1] || '';
+                
+                if (domain && domain !== 'domain' && domain !== 'company_domain') { // Skip headers
+                    companies.push({ domain, name });
+                    importedCount++;
+                }
+            });
+            
+            if (importedCount > 0) {
+                // Show import status instead of populating the form
+                importStatus.innerHTML = `
+                    <div class="import-success">
+                        <i class="fas fa-check-circle"></i>
+                        <span>${importedCount} companies ready for processing</span>
+                        <button type="button" class="btn btn--outline btn--small" onclick="leadFinderApp.clearImport()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                `;
+                importStatus.style.display = 'block';
+                
+                // Store companies for bulk processing
+                this.importedCompanies = companies;
+                
+                this.showToast('success', 'Import Complete', `${importedCount} companies imported successfully`);
+            } else {
+                this.showToast('error', 'Import Failed', 'No valid companies found in the file');
+            }
+            
+            // Clear file input
+            document.getElementById('companiesFileInput').value = '';
+            
+        } catch (error) {
+            console.error('Import error:', error);
+            this.showToast('error', 'Import Failed', 'Error parsing the file. Please check the format.');
+        }
+    }
+
+    clearImport() {
+        const importStatus = document.getElementById('importStatus');
+        importStatus.style.display = 'none';
+        this.importedCompanies = [];
+    }
+
+    addCompanyRow(domain = '', name = '') {
+        const companiesList = document.getElementById('companiesList');
+        const newRow = document.createElement('div');
+        newRow.className = 'company-row';
+        newRow.innerHTML = `
+            <div class="form-group">
+                <input type="text" name="bulkCompanyDomain" class="form-control" placeholder="Company Domain (e.g., techcorp.com)" value="${domain}">
+            </div>
+            <div class="form-group">
+                <input type="text" name="bulkCompanyName" class="form-control" placeholder="Company Name (e.g., Tech Corp)" value="${name}">
+            </div>
+            <button type="button" class="btn btn--outline remove-company-btn">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        companiesList.appendChild(newRow);
+        this.updateRemoveButtons();
+    }
+
     async handleSingleFormSubmit(e) {
         e.preventDefault();
         console.log('Single form submitted');
@@ -188,7 +299,7 @@ class LeadFinderApp {
             job_title: formData.get('jobTitle'),
             company_domain: formData.get('companyDomain') || undefined,
             company_name: formData.get('companyName') || undefined,
-            location: formData.get('location') || 'Worldwide',
+            location: formData.get('location') === 'Worldwide' || !formData.get('location') ? undefined : formData.get('location'),
             max_results: parseInt(formData.get('maxResults')) || 10
         };
 
@@ -209,7 +320,7 @@ class LeadFinderApp {
         
         const formData = new FormData(e.target);
         const bulkJobTitle = formData.get('bulkJobTitle');
-        const bulkLocation = formData.get('bulkLocation') || 'Worldwide';
+        const bulkLocation = formData.get('bulkLocation') === 'Worldwide' || !formData.get('bulkLocation') ? undefined : formData.get('bulkLocation');
         const bulkMaxResults = parseInt(formData.get('bulkMaxResults')) || 10;
 
         // Validate required fields
@@ -218,25 +329,37 @@ class LeadFinderApp {
             return;
         }
 
-        // Get all company rows
-        const companyRows = document.querySelectorAll('.company-row');
-        const searches = [];
+        let searches = [];
 
-        companyRows.forEach(row => {
-            const domain = row.querySelector('input[name="bulkCompanyDomain"]').value;
-            const name = row.querySelector('input[name="bulkCompanyName"]').value;
-            
-            // Only add if at least one field is filled
-            if (domain || name) {
-                searches.push({
-                    job_title: bulkJobTitle,
-                    company_domain: domain || undefined,
-                    company_name: name || undefined,
-                    location: bulkLocation,
-                    max_results: bulkMaxResults
-                });
-            }
-        });
+        // Check if we have imported companies
+        if (this.importedCompanies && this.importedCompanies.length > 0) {
+            // Use imported companies
+            searches = this.importedCompanies.map(company => ({
+                job_title: bulkJobTitle,
+                company_domain: company.domain || undefined,
+                company_name: company.name || undefined,
+                location: bulkLocation,
+                max_results: bulkMaxResults
+            }));
+        } else {
+            // Get all company rows from manual input
+            const companyRows = document.querySelectorAll('.company-row');
+            companyRows.forEach(row => {
+                const domain = row.querySelector('input[name="bulkCompanyDomain"]').value;
+                const name = row.querySelector('input[name="bulkCompanyName"]').value;
+                
+                // Only add if at least one field is filled
+                if (domain || name) {
+                    searches.push({
+                        job_title: bulkJobTitle,
+                        company_domain: domain || undefined,
+                        company_name: name || undefined,
+                        location: bulkLocation,
+                        max_results: bulkMaxResults
+                    });
+                }
+            });
+        }
 
         if (searches.length === 0) {
             this.showToast('error', 'Validation Error', 'At least one company domain or name is required');
@@ -294,7 +417,6 @@ class LeadFinderApp {
     async makeAPICall(searchData) {
         console.log('Making API call with data:', searchData);
         // Prepare request body as per API docs
-        const apiKey = this.apiKey || '<YOUR_API_KEY>';
         const requestBody = {
             enrich_email_address: false,
             enrich_phone_number: false,
@@ -302,27 +424,27 @@ class LeadFinderApp {
                 contact_job_title: searchData.job_title,
                 company_domain: searchData.company_domain,
                 company_name: searchData.company_name,
-                company_linkedin_url: searchData.company_linkedin_url || undefined,
-                location: searchData.location,
-                max_results: Math.max(1, Math.min(10, searchData.max_results || 1))
+                company_linkedin_url: searchData.company_linkedin_url,
+                location: searchData.location, // Will be undefined for "Worldwide" which is correct
+                max_results: Math.max(1, Math.min(10, searchData.max_results || 5))
             }
         };
+        
+        console.log('Request body being sent:', JSON.stringify(requestBody, null, 2));
         try {
-            const response = await fetch(
-                `https://app.bettercontact.rocks/api/v2/lead_finder?api_key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(requestBody)
-                }
-            );
+            const response = await fetch('/api/lead_finder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                console.error('API error response:', errorData);
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`);
             }
             const result = await response.json();
-            // API returns { success, task: { data: [...] } }
             if (result && result.task && result.task.data) {
                 return { data: result.task.data };
             } else {
@@ -421,10 +543,17 @@ class LeadFinderApp {
                 <td>${contact.contact_last_name || ''}</td>
                 <td>${contact.contact_email_address || ''}</td>
                 <td>${contact.contact_job_title || ''}</td>
-                <td>${contact.company || ''}</td>
+                <td>${contact.company_name || ''}</td>
                 <td>${contact.company_domain || ''}</td>
-                <td>${contact.location || ''}</td>
+                <td>${contact.contact_location || ''}</td>
                 <td>${contact.contact_phone_number || ''}</td>
+                <td>
+                    ${contact.contact_linkedin_profile_url ? 
+                        `<a href="${contact.contact_linkedin_profile_url}" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>` : ''
+                    }
+                </td>
                 <td>
                     <span class="email-status ${contact.contact_email_address_status || 'unknown'}">
                         ${contact.contact_email_address_status || 'unknown'}
@@ -517,22 +646,75 @@ class LeadFinderApp {
         }
 
         const headers = [
-            'First Name', 'Last Name', 'Email', 'Job Title', 
-            'Company', 'Domain', 'Location', 'Phone', 'Email Status'
+            'ID', 'First Name', 'Last Name', 'Email', 'Job Title', 
+            'Company', 'Domain', 'Location', 'Phone', 'LinkedIn URL', 'Email Status',
+            'Company ID', 'Company Size', 'Contact City', 'Company About', 'Contact Gender',
+            'Company Founded', 'Company Funding', 'Company Website', 'Contact Activity',
+            'Company Employees', 'Company Followers', 'Contact Followers', 'Company Industries',
+            'Contact Experience', 'Company Description', 'Company LinkedIn ID', 'Contact Connections',
+            'Contact LinkedIn ID', 'Company Address City', 'Company Country Code', 'Company Headquarters',
+            'Company LinkedIn URL', 'Company Phone Number', 'Company Specialities', 'Contact Country Code',
+            'Company Address State', 'Company Industry Code', 'Company Address Street',
+            'Company Crunchbase URL', 'Company Address Country', 'Company Address Zipcode',
+            'Contact Current Company', 'Contact Phone Number CC', 'Company Employees Number',
+            'Company Organization Type', 'Contact People Also Viewed', 'Company Formatted Locations',
+            'Contact Email Address Provider', 'Contact Additional Phone Number', 'Enriched'
         ];
 
         const csvContent = [
             headers.join(','),
             ...this.currentResults.map(contact => [
+                this.escapeCsv(contact.id || ''),
                 this.escapeCsv(contact.contact_first_name || ''),
                 this.escapeCsv(contact.contact_last_name || ''),
                 this.escapeCsv(contact.contact_email_address || ''),
                 this.escapeCsv(contact.contact_job_title || ''),
-                this.escapeCsv(contact.company || ''),
+                this.escapeCsv(contact.company_name || ''),
                 this.escapeCsv(contact.company_domain || ''),
-                this.escapeCsv(contact.location || ''),
+                this.escapeCsv(contact.contact_location || ''),
                 this.escapeCsv(contact.contact_phone_number || ''),
-                this.escapeCsv(contact.contact_email_address_status || '')
+                this.escapeCsv(contact.contact_linkedin_profile_url || ''),
+                this.escapeCsv(contact.contact_email_address_status || ''),
+                this.escapeCsv(contact.company_id || ''),
+                this.escapeCsv(contact.company_size || ''),
+                this.escapeCsv(contact.contact_city || ''),
+                this.escapeCsv(contact.company_about || ''),
+                this.escapeCsv(contact.contact_gender || ''),
+                this.escapeCsv(contact.company_founded || ''),
+                this.escapeCsv(contact.company_funding || ''),
+                this.escapeCsv(contact.company_website || ''),
+                this.escapeCsv(contact.contact_activity || ''),
+                this.escapeCsv(contact.company_employees || ''),
+                this.escapeCsv(contact.company_followers || ''),
+                this.escapeCsv(contact.contact_followers || ''),
+                this.escapeCsv(contact.company_industries || ''),
+                this.escapeCsv(contact.contact_experience || ''),
+                this.escapeCsv(contact.company_description || ''),
+                this.escapeCsv(contact.company_linkedin_id || ''),
+                this.escapeCsv(contact.contact_connections || ''),
+                this.escapeCsv(contact.contact_linkedin_id || ''),
+                this.escapeCsv(contact.company_address_city || ''),
+                this.escapeCsv(contact.company_country_code || ''),
+                this.escapeCsv(contact.company_headquarters || ''),
+                this.escapeCsv(contact.company_linkedin_url || ''),
+                this.escapeCsv(contact.company_phone_number || ''),
+                this.escapeCsv(contact.company_specialities || ''),
+                this.escapeCsv(contact.contact_country_code || ''),
+                this.escapeCsv(contact.company_address_state || ''),
+                this.escapeCsv(contact.company_industry_code || ''),
+                this.escapeCsv(contact.company_address_street || ''),
+                this.escapeCsv(contact.company_crunchbase_url || ''),
+                this.escapeCsv(contact.company_address_country || ''),
+                this.escapeCsv(contact.company_address_zipcode || ''),
+                this.escapeCsv(contact.contact_current_company || ''),
+                this.escapeCsv(contact.contact_phone_number_cc || ''),
+                this.escapeCsv(contact.company_employees_number || ''),
+                this.escapeCsv(contact.company_organization_type || ''),
+                this.escapeCsv(contact.contact_people_also_viewed || ''),
+                this.escapeCsv(contact.company_formatted_locations || ''),
+                this.escapeCsv(contact.contact_email_address_provider || ''),
+                this.escapeCsv(contact.contact_additional_phone_number || ''),
+                this.escapeCsv(contact.enriched || '')
             ].join(','))
         ].join('\n');
 
@@ -548,22 +730,75 @@ class LeadFinderApp {
 
         // Simple Excel-compatible format (TSV)
         const headers = [
-            'First Name', 'Last Name', 'Email', 'Job Title', 
-            'Company', 'Domain', 'Location', 'Phone', 'Email Status'
+            'ID', 'First Name', 'Last Name', 'Email', 'Job Title', 
+            'Company', 'Domain', 'Location', 'Phone', 'LinkedIn URL', 'Email Status',
+            'Company ID', 'Company Size', 'Contact City', 'Company About', 'Contact Gender',
+            'Company Founded', 'Company Funding', 'Company Website', 'Contact Activity',
+            'Company Employees', 'Company Followers', 'Contact Followers', 'Company Industries',
+            'Contact Experience', 'Company Description', 'Company LinkedIn ID', 'Contact Connections',
+            'Contact LinkedIn ID', 'Company Address City', 'Company Country Code', 'Company Headquarters',
+            'Company LinkedIn URL', 'Company Phone Number', 'Company Specialities', 'Contact Country Code',
+            'Company Address State', 'Company Industry Code', 'Company Address Street',
+            'Company Crunchbase URL', 'Company Address Country', 'Company Address Zipcode',
+            'Contact Current Company', 'Contact Phone Number CC', 'Company Employees Number',
+            'Company Organization Type', 'Contact People Also Viewed', 'Company Formatted Locations',
+            'Contact Email Address Provider', 'Contact Additional Phone Number', 'Enriched'
         ];
 
         const tsvContent = [
             headers.join('\t'),
             ...this.currentResults.map(contact => [
+                contact.id || '',
                 contact.contact_first_name || '',
                 contact.contact_last_name || '',
                 contact.contact_email_address || '',
                 contact.contact_job_title || '',
-                contact.company || '',
+                contact.company_name || '',
                 contact.company_domain || '',
-                contact.location || '',
+                contact.contact_location || '',
                 contact.contact_phone_number || '',
-                contact.contact_email_address_status || ''
+                contact.contact_linkedin_profile_url || '',
+                contact.contact_email_address_status || '',
+                contact.company_id || '',
+                contact.company_size || '',
+                contact.contact_city || '',
+                contact.company_about || '',
+                contact.contact_gender || '',
+                contact.company_founded || '',
+                contact.company_funding || '',
+                contact.company_website || '',
+                contact.contact_activity || '',
+                contact.company_employees || '',
+                contact.company_followers || '',
+                contact.contact_followers || '',
+                contact.company_industries || '',
+                contact.contact_experience || '',
+                contact.company_description || '',
+                contact.company_linkedin_id || '',
+                contact.contact_connections || '',
+                contact.contact_linkedin_id || '',
+                contact.company_address_city || '',
+                contact.company_country_code || '',
+                contact.company_headquarters || '',
+                contact.company_linkedin_url || '',
+                contact.company_phone_number || '',
+                contact.company_specialities || '',
+                contact.contact_country_code || '',
+                contact.company_address_state || '',
+                contact.company_industry_code || '',
+                contact.company_address_street || '',
+                contact.company_crunchbase_url || '',
+                contact.company_address_country || '',
+                contact.company_address_zipcode || '',
+                contact.contact_current_company || '',
+                contact.contact_phone_number_cc || '',
+                contact.company_employees_number || '',
+                contact.company_organization_type || '',
+                contact.contact_people_also_viewed || '',
+                contact.company_formatted_locations || '',
+                contact.contact_email_address_provider || '',
+                contact.contact_additional_phone_number || '',
+                contact.enriched || ''
             ].join('\t'))
         ].join('\n');
 
@@ -572,10 +807,12 @@ class LeadFinderApp {
     }
 
     escapeCsv(field) {
-        if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-            return `"${field.replace(/"/g, '""')}"`;
+        // Convert to string and handle null/undefined values
+        const str = String(field || '');
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
         }
-        return field;
+        return str;
     }
 
     downloadFile(content, filename, mimeType) {

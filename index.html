@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BetterContact Lead Finder</title>
+    <title>H Lead Finder</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 </head>
@@ -15,7 +15,7 @@
                 <div class="header-content">
                     <h1 class="logo">
                         <i class="fas fa-search"></i>
-                        BetterContact Lead Finder
+                        H Lead Finder
                     </h1>
                     <button class="theme-toggle" id="themeToggle">
                         <i class="fas fa-moon"></i>
@@ -103,11 +103,23 @@
                             <div class="bulk-companies-section">
                                 <div class="section-header">
                                     <h3>Companies</h3>
-                                    <button type="button" class="btn btn--secondary" id="addCompanyBtn">
-                                        <i class="fas fa-plus"></i>
-                                        Add Company
-                                    </button>
+                                    <div class="bulk-actions">
+                                        <button type="button" class="btn btn--secondary" id="downloadSampleBtn">
+                                            <i class="fas fa-download"></i>
+                                            Download Sample CSV
+                                        </button>
+                                        <button type="button" class="btn btn--secondary" id="importCompaniesBtn">
+                                            <i class="fas fa-upload"></i>
+                                            Import CSV
+                                        </button>
+                                        <button type="button" class="btn btn--secondary" id="addCompanyBtn">
+                                            <i class="fas fa-plus"></i>
+                                            Add Company
+                                        </button>
+                                    </div>
                                 </div>
+                                <input type="file" id="companiesFileInput" accept=".csv,.txt" style="display: none;">
+                                <div id="importStatus" class="import-status" style="display: none;"></div>
                                 <div id="companiesList" class="companies-list">
                                     <div class="company-row">
                                         <div class="form-group">
@@ -175,10 +187,11 @@
                                     <th data-sort="contact_last_name">Last Name <i class="fas fa-sort"></i></th>
                                     <th data-sort="contact_email_address">Email <i class="fas fa-sort"></i></th>
                                     <th data-sort="contact_job_title">Job Title <i class="fas fa-sort"></i></th>
-                                    <th data-sort="company">Company <i class="fas fa-sort"></i></th>
+                                    <th data-sort="company_name">Company <i class="fas fa-sort"></i></th>
                                     <th data-sort="company_domain">Domain <i class="fas fa-sort"></i></th>
-                                    <th data-sort="location">Location <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_location">Location <i class="fas fa-sort"></i></th>
                                     <th data-sort="contact_phone_number">Phone <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_linkedin_profile_url">LinkedIn <i class="fas fa-sort"></i></th>
                                     <th data-sort="contact_email_address_status">Email Status <i class="fas fa-sort"></i></th>
                                 </tr>
                             </thead>
