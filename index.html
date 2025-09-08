@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BetterContact Lead Finder</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <div class="header-content">
+                    <h1 class="logo">
+                        <i class="fas fa-search"></i>
+                        BetterContact Lead Finder
+                    </h1>
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <!-- Navigation Tabs -->
+                <div class="tab-navigation">
+                    <button class="tab-btn active" data-tab="single">
+                        <i class="fas fa-user"></i>
+                        Single Lead Generation
+                    </button>
+                    <button class="tab-btn" data-tab="bulk">
+                        <i class="fas fa-users"></i>
+                        Bulk Lead Generation
+                    </button>
+                </div>
+
+                <!-- Single Lead Generation Tab -->
+                <div class="tab-content active" id="single-tab">
+                    <div class="form-card">
+                        <h2>Find Single Lead</h2>
+                        <form id="singleLeadForm" class="lead-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="jobTitle">Job Title *</label>
+                                    <input type="text" id="jobTitle" name="jobTitle" class="form-control" placeholder="e.g., VP of Engineering" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="companyDomain">Company Domain</label>
+                                    <input type="text" id="companyDomain" name="companyDomain" class="form-control" placeholder="e.g., techcorp.com">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="companyName">Company Name</label>
+                                    <input type="text" id="companyName" name="companyName" class="form-control" placeholder="e.g., Tech Corp">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="location">Location</label>
+                                    <input type="text" id="location" name="location" class="form-control" placeholder="Worldwide (default)">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="maxResults">Max Results</label>
+                                    <input type="number" id="maxResults" name="maxResults" class="form-control" value="10" min="1" max="50">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn--primary btn--lg">
+                                <i class="fas fa-search"></i>
+                                Find Contacts
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Bulk Lead Generation Tab -->
+                <div class="tab-content" id="bulk-tab">
+                    <div class="form-card">
+                        <h2>Bulk Lead Generation</h2>
+                        <form id="bulkLeadForm" class="lead-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="bulkJobTitle">Job Title *</label>
+                                    <input type="text" id="bulkJobTitle" name="bulkJobTitle" class="form-control" placeholder="e.g., VP of Engineering" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="bulkLocation">Location</label>
+                                    <input type="text" id="bulkLocation" name="bulkLocation" class="form-control" placeholder="Worldwide (default)">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="bulkMaxResults">Max Results per Company</label>
+                                    <input type="number" id="bulkMaxResults" name="bulkMaxResults" class="form-control" value="10" min="1" max="50">
+                                </div>
+                            </div>
+                            
+                            <div class="bulk-companies-section">
+                                <div class="section-header">
+                                    <h3>Companies</h3>
+                                    <button type="button" class="btn btn--secondary" id="addCompanyBtn">
+                                        <i class="fas fa-plus"></i>
+                                        Add Company
+                                    </button>
+                                </div>
+                                <div id="companiesList" class="companies-list">
+                                    <div class="company-row">
+                                        <div class="form-group">
+                                            <input type="text" name="bulkCompanyDomain" class="form-control" placeholder="Company Domain (e.g., techcorp.com)">
+                                        </div>
+                                        <div class="form-group">
+                                            <input type="text" name="bulkCompanyName" class="form-control" placeholder="Company Name (e.g., Tech Corp)">
+                                        </div>
+                                        <button type="button" class="btn btn--outline remove-company-btn" disabled>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn--primary btn--lg">
+                                <i class="fas fa-search"></i>
+                                Find All Contacts
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loading Section -->
+                <div class="loading-section hidden" id="loadingSection">
+                    <div class="loading-card">
+                        <div class="loading-spinner"></div>
+                        <h3>Finding contacts...</h3>
+                        <p id="loadingMessage">Processing your request</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="results-section hidden" id="resultsSection">
+                    <div class="results-header">
+                        <h2>Results</h2>
+                        <div class="results-actions">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="searchResults" placeholder="Search results..." class="form-control">
+                            </div>
+                            <button class="btn btn--secondary" id="exportCsvBtn">
+                                <i class="fas fa-download"></i>
+                                Export CSV
+                            </button>
+                            <button class="btn btn--secondary" id="exportExcelBtn">
+                                <i class="fas fa-file-excel"></i>
+                                Export Excel
+                            </button>
+                            <button class="btn btn--outline" id="clearResultsBtn">
+                                <i class="fas fa-times"></i>
+                                Clear Results
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="results-table-container">
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th data-sort="contact_first_name">First Name <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_last_name">Last Name <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_email_address">Email <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_job_title">Job Title <i class="fas fa-sort"></i></th>
+                                    <th data-sort="company">Company <i class="fas fa-sort"></i></th>
+                                    <th data-sort="company_domain">Domain <i class="fas fa-sort"></i></th>
+                                    <th data-sort="location">Location <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_phone_number">Phone <i class="fas fa-sort"></i></th>
+                                    <th data-sort="contact_email_address_status">Email Status <i class="fas fa-sort"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody">
+                                <!-- Results will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="results-footer">
+                        <div class="results-info">
+                            <span id="resultsCount">0 contacts found</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-state-content">
+                        <i class="fas fa-search"></i>
+                        <h3>Find Your Next Leads</h3>
+                        <p>Use the form above to search for contacts and build your prospect list.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toastContainer"></div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
