@@ -1,7 +1,7 @@
 // BetterContact Lead Finder App
 class LeadFinderApp {
     constructor() {
-        this.apiKey = '71c6de3c7e8ec1f97848';
+    this.apiKey = '71c6de3c7e8ec1f97848'; // Set real API key here
         this.apiEndpoint = 'https://app.bettercontact.rocks/api/v2/async';
         this.currentResults = [];
         this.sortColumn = null;
@@ -293,40 +293,46 @@ class LeadFinderApp {
 
     async makeAPICall(searchData) {
         console.log('Making API call with data:', searchData);
-        
-        // For demo purposes, we'll use mock data since the real API might not be available
-        // This ensures the app works for demonstration
-        return this.generateMockData(searchData);
-        
-        /* Real API call code (commented out for demo):
+        // Prepare request body as per API docs
+        const apiKey = this.apiKey || '<YOUR_API_KEY>';
+        const requestBody = {
+            enrich_email_address: false,
+            enrich_phone_number: false,
+            search: {
+                contact_job_title: searchData.job_title,
+                company_domain: searchData.company_domain,
+                company_name: searchData.company_name,
+                company_linkedin_url: searchData.company_linkedin_url || undefined,
+                location: searchData.location,
+                max_results: Math.max(1, Math.min(10, searchData.max_results || 1))
+            }
+        };
         try {
-            const response = await fetch(this.apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
-                },
-                body: JSON.stringify(searchData)
-            });
-
+            const response = await fetch(
+                `https://app.bettercontact.rocks/api/v2/lead_finder?api_key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                }
+            );
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-
             const result = await response.json();
-            
-            // If the API returns an async response with an ID, we might need to poll for results
-            if (result.id && !result.data) {
-                return await this.pollForResults(result.id);
+            // API returns { success, task: { data: [...] } }
+            if (result && result.task && result.task.data) {
+                return { data: result.task.data };
+            } else {
+                return { data: [] };
             }
-            
-            return result.results || result;
         } catch (error) {
             console.error('API call error:', error);
             // Fallback to mock data
             return this.generateMockData(searchData);
         }
-        */
     }
 
     generateMockData(searchData) {
